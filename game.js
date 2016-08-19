@@ -28,7 +28,7 @@ function carregaAssets() {
     game.load.tilemap('mapa', 'assets/mapacaverna.json', null, Phaser.Tilemap.TILED_JSON);
 
     // Carrega moedas
-    game.load.spritesheet('coin', 'assets/coin.png', 32, 32);
+    game.load.spritesheet('coin', 'assets/coin.png', 32, 32) ;
     // Carrega som para moedas
     game.load.audio('collect-coin', ['assets/collect-coin.ogg']);
     // Carrega som para pulo em cima de algo
