@@ -9,6 +9,9 @@ window.onload = function() {
 
 var textoMoedas;
 var contadorMoedas = 0;
+var tamanhoJogador = 'pequeno';
+var jogadorImune = false;
+
 
 /**
  *  Carrega imagens, sons etc, para usar no jogo
@@ -32,6 +35,7 @@ function carregaAssets() {
     game.load.audio('kick', ['assets/kick.ogg']);
     // Carega som de fim do jogo
     game.load.audio('lose', ['assets/lose.ogg']);
+
 }
 
 /**
@@ -93,7 +97,12 @@ function atualizaJogo() {
     game.physics.arcade.collide(inimigos, layer, inimigoColidiuTile);
 
     movimentaJogador();
-    verificaSeEncostouInimigo();
+
+    // Se o jogador NÃO estiver imune, verifica colisões com inimigo
+    if (jogadorImune == false){
+        verificaSeEncostouInimigo();
+    }
+    
     verificaSeEncostouMoedas();
     verificaEscada();
 }
@@ -195,6 +204,8 @@ function criaJogador(){
     jogador.animations.add('right', [5, 6, 7, 8], 10, true);
 
     game.camera.follow(jogador);
+
+    defineJogadorPequeno();
 }
 
 
@@ -268,8 +279,8 @@ function encostouInimigo (jogador, inimigo) {
         // Executa música de pulo em algo
         musicaKick.play('', 0, 1, false);
     }else{
-        // Termina jogo
-        fimDoJogo();
+        // Em vez de terminar o jogo, chama função que gerencia "coisas mortíferas"
+        encostouEmAlgoMortifero();
     }
 }
 
@@ -315,6 +326,7 @@ function encostouEmMoeda(player, moeda) {
 
     // Contabiliza moedas
     contabilizaMoedas();
+	
 }
 
 
@@ -344,6 +356,7 @@ function contabilizaMoedas(){
 
     // Atualiza texto
     textoMoedas.setText('Pontuação: ' + contadorMoedas + ' moedas');
+	if(contadorMoedas==20 || contadorMoedas==50){pegouEnergia()}
 }
 
 
@@ -370,5 +383,93 @@ function verificaEscada(){
         jogador.body.gravity.y = 1600;
         // Define que não está na escada
         jogadorNaEscada = false;
+    }
+}
+
+
+/**
+ *  Define o tamanho do jogador pequeno
+ */
+function defineJogadorPequeno(){
+    tamanhoJogador = 'pequeno';
+    jogador.scale.setTo(0.8,0.8);
+}
+
+/**
+ *  Define o tamanho do jogador como grande
+ */
+function defineJogadorGrande(){
+    tamanhoJogador = 'grande';
+    jogador.scale.setTo(1,1);
+}
+
+/**
+ *  Gerencia energia para jogador, deixando-o grande
+ */
+function pegouEnergia(){
+    defineJogadorGrande();
+}
+
+
+/** 
+ *  Faz jogador piscar e ficar imune enquanto isso
+ */
+function fadeJogador(){
+    var numeroPiscadas = 5;
+    var intervaloPiscadas = 200;
+
+    // Cria objeto tween para controle do jogador
+    var tween = game.add.tween(jogador);
+
+    // Define propriedades do evento atuando no jogador
+    tween.to( 
+        { alpha: 0 }, 
+        intervaloPiscadas, 
+        Phaser.Easing.Linear.None, 
+        false, 
+        0, 
+        numeroPiscadas, 
+        false
+    );
+
+    // Cria um sinalizador interno no sistema
+    var signal = new Phaser.Signal();
+
+    // Quando terminar o processo, chama esta função anônima
+    signal.add(function(){
+        // Exibe jogador
+        jogador.alpha = 1;
+        // Deixa-o imune
+        jogadorImune = false;
+    });
+
+    // Ao completar evento, chama sinal criado acima
+    tween.onComplete = signal;
+
+    //  Inicia todo o processo
+    tween.start();
+
+    // Define se o jogador está imune aos inimigos
+    jogadorImune = true;
+}
+
+/**
+ *  Toda vez que jogador encosta em algo mortífero,
+ *  chama esta função
+ */
+function encostouEmAlgoMortifero(){
+    // Se o jogador está imune, sai da função
+    if (jogadorImune){
+        return false;
+    }
+
+    if (tamanhoJogador == 'grande'){
+        // Pisca jogador
+        fadeJogador();
+        // Define seu novo tamanho
+        defineJogadorPequeno();
+    }else{
+        // Se jogador já está pequeno e encostou em algo mortífero, então termina o jogo
+        fimDoJogo();
     }
 }
